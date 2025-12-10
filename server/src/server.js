@@ -39,5 +39,18 @@ const PORT = process.env.PORT || 4000;
 (async () => {
   const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/oscape';
   await connectDB(mongoUri);
+  
+  // Drop old email index if it exists
+  try {
+    const User = require('./models/User');
+    await User.collection.dropIndex('email_1');
+    console.log('Dropped old email_1 index');
+  } catch (err) {
+    // Ignore if index doesn't exist
+    if (err.code !== 27 && !err.message.includes('index not found')) {
+      console.log('Note: email_1 index drop failed (may not exist):', err.message);
+    }
+  }
+  
   app.listen(PORT, () => console.log(`Server running on ${PORT}`));
 })();
