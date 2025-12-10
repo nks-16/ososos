@@ -3,6 +3,7 @@ import Login from './components/Login';
 import Terminal from './components/Terminal';
 import BankersAlgorithm from './components/BankersAlgorithm';
 import Round3Quiz from './components/Round3Quiz';
+import logo from './nisb-logo-white.png';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('oscape_token') || null);
@@ -22,9 +23,28 @@ export default function App() {
 
   useEffect(() => {
     if (username && token) {
+      console.log('Fetching progress on mount for user:', username);
       fetchProgress();
     }
   }, [username, token]);
+  
+  // Also fetch progress when component mounts if already logged in
+  useEffect(() => {
+    const storedToken = localStorage.getItem('oscape_token');
+    const storedUsername = localStorage.getItem('oscape_username');
+    if (storedToken && storedUsername && !progress.totalScore) {
+      console.log('Refreshing progress from localStorage on initial mount');
+      fetchProgress();
+    }
+  }, []);
+  
+  // Update total score from command responses (no polling needed)
+  const handleScoreUpdate = (newTotalScore) => {
+    setProgress(prev => ({
+      ...prev,
+      totalScore: newTotalScore
+    }));
+  };
 
   const fetchProgress = async () => {
     try {
@@ -63,14 +83,20 @@ export default function App() {
     localStorage.removeItem('oscape_round');
   };
 
-  const selectRound = (round) => {
+  const selectRound = async (round) => {
     setCurrentRound(round);
     localStorage.setItem('oscape_round', round);
+    // Refresh progress when returning to menu to show updated total score
+    if (round === 'menu') {
+      console.log('Returning to menu, refreshing progress...');
+      await fetchProgress();
+    }
   };
 
   const handleRoundComplete = async (round, score) => {
+    console.log('handleRoundComplete called:', { round, score, username });
     try {
-      await fetch('http://localhost:4000/api/progress/complete-round', {
+      const response = await fetch('http://localhost:4000/api/progress/complete-round', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -78,7 +104,19 @@ export default function App() {
         },
         body: JSON.stringify({ username, round, score })
       });
-      await fetchProgress();
+      const data = await response.json();
+      console.log('Round completion response:', data);
+      
+      // Update progress state immediately with the response data
+      setProgress(data);
+      console.log('Progress updated - Total Score:', data.totalScore);
+      console.log('Redirecting to menu in 3 seconds...');
+      
+      // Redirect to menu after 3 seconds to show next round is unlocked
+      setTimeout(() => {
+        console.log('Redirecting to menu now');
+        selectRound('menu');
+      }, 3000);
     } catch (error) {
       console.error('Failed to complete round:', error);
     }
@@ -96,7 +134,8 @@ export default function App() {
 
   if (currentRound === 'menu') {
     return (
-      <div style={{ minHeight: '100vh', background: '#071019', color: '#d6e1e8', padding: '40px 20px' }}>
+      <div style={{ minHeight: '100vh', background: '#071019', color: '#d6e1e8', padding: '40px 20px', position: 'relative' }}>
+        <img src={logo} alt="NISB Logo" style={{ position: 'absolute', top: '20px', left: '20px', height: '40px' }} />
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <h1 style={{ color: '#7dd3fc', fontSize: '3em', marginBottom: '10px' }}>OScape</h1>
@@ -274,6 +313,7 @@ export default function App() {
           workspaceId={workspaceId}
           username={username}
           onComplete={(score) => handleRoundComplete(1, score)}
+          onScoreUpdate={handleScoreUpdate}
         />
       </div>
     );

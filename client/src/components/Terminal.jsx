@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import api from '../api';
 import '../styles/terminal.css';
+import logo from '../nisb-logo-white.png';
 
-export default function Terminal({ token, username, onComplete }) {
+export default function Terminal({ token, username, onComplete, onScoreUpdate }) {
   const [lines, setLines] = useState([
     'Welcome to OScape v1',
     'Incident ID: FS-CRASH-8842',
@@ -28,10 +29,12 @@ export default function Terminal({ token, username, onComplete }) {
       try {
         const workspaceId = localStorage.getItem('oscape_workspace');
         if (workspaceId && token) {
+          console.log('Fetching workspace score for:', workspaceId);
           const response = await fetch(`http://localhost:4000/api/progress/workspace/${workspaceId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const data = await response.json();
+          console.log('Workspace score data:', data);
           if (data.score !== undefined) {
             setScore(data.score);
           }
@@ -69,12 +72,24 @@ export default function Terminal({ token, username, onComplete }) {
       if (res.newPrompt) setCwd(res.newPrompt);
       if (typeof res.newScore !== 'undefined' && res.newScore !== null) {
         setScore(res.newScore);
-        // Check if round is completed
-        if (res.completed && !completed) {
+        
+        // Update total score in parent component if provided
+        if (res.totalScore !== undefined && onScoreUpdate) {
+          onScoreUpdate(res.totalScore);
+        }
+        
+        // Check if round is completed (Stage 2 complete = Round 1 done)
+        const roundCompleted = res.completed || (res.flags && res.flags.stage2Complete);
+        console.log('Completion check:', { roundCompleted, completed: completed, flags: res.flags });
+        if (roundCompleted && !completed) {
+          console.log('✓ Round 1 completed! Triggering onComplete callback...');
           setCompleted(true);
-          setLines(l => [...l, '', 'Round 1 Complete!', `Final Score: ${res.newScore}`, '']);
+          // Server already sent nice completion message, just trigger callback
           if (onComplete) {
-            setTimeout(() => onComplete(res.newScore), 2000);
+            setTimeout(() => {
+              console.log('→ Executing onComplete callback now');
+              onComplete(res.newScore);
+            }, 3000);
           }
         }
       }
@@ -122,25 +137,28 @@ export default function Terminal({ token, username, onComplete }) {
 
   const cheatSheetCommands = [
     { cat: 'Navigation', cmds: [
-      { cmd: 'ls', desc: 'List directory contents' },
-      { cmd: 'cd <path>', desc: 'Change directory' },
+      { cmd: 'ls', desc: 'list files' },
+      { cmd: 'ls -a', desc: 'list all (hidden)' },
+      { cmd: 'cd <dir>', desc: 'to change directory' },
       { cmd: 'pwd', desc: 'Print working directory' }
     ]},
     { cat: 'File Operations', cmds: [
-      { cmd: 'touch <file>', desc: 'Create new file' },
-      { cmd: 'cat <file>', desc: 'Display file contents' },
-      { cmd: 'mkdir <dir>', desc: 'Create directory' },
-      { cmd: 'rm <path>', desc: 'Remove file/directory' }
+      { cmd: 'cat <file>', desc: 'read the contents of file' },
+      { cmd: 'diff file1 file2', desc: 'to compare difference between 2 files' },
+      { cmd: 'tar -xvzf file.tar.gz', desc: 'to extract from archives' },
+      { cmd: 'cp src dst', desc: 'to copy the src file to dst file - can be used for restoration' }
     ]},
-    { cat: 'Process', cmds: [
-      { cmd: 'ps', desc: 'List processes' },
-      { cmd: 'kill <pid>', desc: 'Terminate process' }
+    { cat: 'Process Management', cmds: [
+      { cmd: 'ps -ef', desc: 'to check the status of running processes' },
+      { cmd: 'ps -ef --forest', desc: 'see the hierarchical relationship between processes' },
+      { cmd: 'lsof -p <pid>', desc: 'To identify which processes have a specific file open' },
+      { cmd: 'kill -9 <pid>', desc: 'To terminate or kill the process' }
     ]},
     { cat: 'Permissions', cmds: [
-      { cmd: 'chmod <mode> <file>', desc: 'Change permissions' }
+      { cmd: 'chmod +x <filename>', desc: 'to add executable permissions to the file' }
     ]},
     { cat: 'Execution', cmds: [
-      { cmd: './script.sh', desc: 'Execute script' }
+      { cmd: './<script>', desc: 'to run the script' }
     ]}
   ];
 
@@ -154,6 +172,7 @@ export default function Terminal({ token, username, onComplete }) {
               <div className="term-dot min"></div>
               <div className="term-dot max"></div>
             </div>
+            <img src={logo} alt="NISB Logo" style={{ height: '24px', marginLeft: '10px' }} />
             <div className="header-center">Round 1: File System Navigation</div>
             <div className="header-right">
               <span className="username">{username || 'user'}</span>

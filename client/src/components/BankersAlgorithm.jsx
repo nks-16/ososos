@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/bankers.css'; 
+import '../styles/bankers.css';
+import logo from '../nisb-logo-white.png'; 
 
 export default function BankersAlgorithm({ sessionId, username, onComplete }) {
   const [state, setState] = useState(null);
@@ -177,6 +178,7 @@ export default function BankersAlgorithm({ sessionId, username, onComplete }) {
 
   return (
     <div className="terminal-container">
+      <img src={logo} alt="NISB Logo" style={{ position: 'absolute', top: '20px', left: '20px', height: '40px', zIndex: 100 }} />
       <div className="terminal-header">
         <div className="traffic-lights">
           <span className="red"></span>

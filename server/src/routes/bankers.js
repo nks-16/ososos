@@ -2,6 +2,22 @@ const express = require('express');
 const router = express.Router();
 const Round2State = require('../models/Round2State');
 const BankersEngine = require('../services/bankersEngine');
+const User = require('../models/User');
+
+// Helper function to update user's Round 2 score in real-time
+async function updateUserRound2Score(sessionId, newScore) {
+  try {
+    const user = await User.findById(sessionId);
+    if (user) {
+      user.round2Score = newScore;
+      user.totalScore = user.round1Score + user.round2Score + user.round3Score;
+      await user.save();
+      console.log(`Real-time Round 2 score update for ${user.username}: round2=${user.round2Score}, total=${user.totalScore}`);
+    }
+  } catch (err) {
+    console.error('Failed to update user Round 2 score:', err);
+  }
+}
 
 // Banker's Algorithm Problem
 // Total Resources: (A, B, C, D) = (12, 6, 8, 9)
@@ -171,13 +187,18 @@ router.post('/check-safety', async (req, res) => {
     }
 
     await state.save();
+    await updateUserRound2Score(state.sessionId, state.score);
+    
+    const user = await User.findById(state.sessionId);
+    const totalScore = user ? user.totalScore : 0;
 
     res.json({
       safe: safetyCheck.safe,
       safeSequence: safetyCheck.safeSequence,
       executionLog: safetyCheck.executionLog,
       unfinishedProcesses: safetyCheck.unfinishedProcesses,
-      score: state.score
+      score: state.score,
+      totalScore
     });
   } catch (error) {
     console.error('Check safety error:', error);
@@ -296,6 +317,10 @@ router.post('/request', async (req, res) => {
     });
 
     await state.save();
+    await updateUserRound2Score(state.sessionId, state.score);
+    
+    const user = await User.findById(state.sessionId);
+    const totalScore = user ? user.totalScore : 0;
 
     res.json({
       granted: result.granted,
@@ -357,6 +382,7 @@ router.post('/release', async (req, res) => {
     });
 
     await state.save();
+    await updateUserRound2Score(state.sessionId, state.score);
 
     res.json({
       success: true,
@@ -401,6 +427,7 @@ router.post('/complete', async (req, res) => {
     state.score += bonusScore;
 
     await state.save();
+    await updateUserRound2Score(state.sessionId, state.score);
 
     res.json({
       message: 'Round 2 completed!',

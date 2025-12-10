@@ -34,6 +34,13 @@ router.get('/progress/:username', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    console.log(`Fetching progress for ${user.username}:`, {
+      round1Score: user.round1Score,
+      round2Score: user.round2Score,
+      round3Score: user.round3Score,
+      totalScore: user.totalScore
+    });
+
     res.json({
       username: user.username,
       round1Complete: user.round1Complete,
@@ -89,6 +96,13 @@ router.post('/complete-round', async (req, res) => {
 
     // Calculate total score
     user.totalScore = user.round1Score + user.round2Score + user.round3Score;
+    
+    console.log(`Round ${round} completed for ${username}:`, {
+      round1Score: user.round1Score,
+      round2Score: user.round2Score,
+      round3Score: user.round3Score,
+      totalScore: user.totalScore
+    });
 
     await user.save();
 

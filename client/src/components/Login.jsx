@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import api from '../api';
 import '../styles/auth.css';
+import logo from '../nisb-logo-white.png';
 
 export default function Login({ onLogin }) {
   const [user, setUser] = useState('');
@@ -29,6 +30,7 @@ export default function Login({ onLogin }) {
 
   return (
     <div className="auth-container">
+      <img src={logo} alt="NISB Logo" style={{ position: 'absolute', top: '20px', left: '20px', height: '40px', zIndex: 1000 }} />
       <div className="terminal-box auth-box">
         {/* Terminal Header */}
         <div className="term-header">

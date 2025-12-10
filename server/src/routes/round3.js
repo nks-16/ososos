@@ -1,6 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const Round3State = require('../models/Round3State');
+const User = require('../models/User');
+
+// Helper function to update user's Round 3 score in real-time
+async function updateUserRound3Score(sessionId, newScore) {
+  try {
+    const user = await User.findById(sessionId);
+    if (user) {
+      user.round3Score = newScore;
+      user.totalScore = user.round1Score + user.round2Score + user.round3Score;
+      await user.save();
+      console.log(`Real-time Round 3 score update for ${user.username}: round3=${user.round3Score}, total=${user.totalScore}`);
+    }
+  } catch (err) {
+    console.error('Failed to update user Round 3 score:', err);
+  }
+}
 
 // Round 3 Problem Data - Passages and MCQs
 const PROBLEM_DATA = {
@@ -249,6 +265,7 @@ router.post('/submit-answer', async (req, res) => {
     }
 
     await state.save();
+    await updateUserRound3Score(state.sessionId, state.score);
 
     res.json({
       correct: isCorrect,

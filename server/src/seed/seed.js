@@ -15,19 +15,21 @@ async function doSeedForWorkspace(workspaceId) {
 
   const nodes = [
     { path: `${base}`, name: 'root', type: 'dir' },
+    { path: `${base}/readme.txt`, name: 'readme.txt', type: 'file', content: 'Welcome to SysBox simulation\nStage 1: FileSystems\n A config file inside the filesystem module was corrupted\nduring a crash. Your goal is to:\n • Explore the filesystem\n  • Inspect the config files inside filesystem modules\n • Extract any backups found in /tmp\n• Compare files if needed\n• Restore a correct config to complete Stage 1' },
     { path: `${base}/tmp`, name: 'tmp', type: 'dir' },
-    { path: `${base}/tmp/backup.tar.gz`, name: 'backup.tar.gz', type: 'file', content: '[tar archive placeholder]', metadata: { tar_extract: [{ path: 'fragment3.txt', content: 'FRAG-GAMMA' }] } },
+    { path: `${base}/tmp/backup.tar.gz`, name: 'backup.tar.gz', type: 'file', content: '', metadata: { tar_extract: [{ path: 'fragment3.txt', content: 'FRAG-GAMMA' }] } },
     { path: `${base}/tmp/fragment3.txt`, name: 'fragment3.txt', type: 'file', content: 'FRAG-GAMMA', hidden: false },
     { path: `${base}/var`, name: 'var', type: 'dir' },
-    { path: `${base}/var/system.log`, name: 'system.log', type: 'file', content: '2025-12-08T03:11:35Z INFO  Filesystem module experienced a crash.\n2025-12-08T03:11:40Z INFO  Backup stored in /tmp.' },
+    { path: `${base}/var/system.log`, name: 'system.log', type: 'file', content: '2025-12-08T03:11:35Z INFO  Filesystem module experienced a crash.\n[This is not the folder you are looking for]' },
     { path: `${base}/modules`, name: 'modules', type: 'dir' },
     { path: `${base}/modules/fs`, name: 'fs', type: 'dir' },
     { path: `${base}/modules/fs/mount.conf`, name: 'mount.conf', type: 'file', content: '# mount.conf  (corrupted)\ntype=ext4\nflags=rw\nprimary_mount=/dev/sda1\n\n# WARNING: missing mount_handler & safe_mode\n\n# MALICIOUS:\ninjector_flag=1\n' },
     { path: `${base}/modules/fs/mount.clean`, name: 'mount.clean', type: 'file', content: '# mount.clean  (trusted)\ntype=ext4\nflags=rw\nprimary_mount=/dev/sda1\nmount_handler=v2.1\nsafe_mode=true\n\n# Internal note:\nFRAG-BETA\n' },
+    { path: `${base}/modules/fs/note.txt`, name: 'note.txt', type: 'file', content: '# The config broke after the crash.\nOne clean copy is nearby,\nand another clue sleeps hidden.\n\nIf you\'re stuck, try looking more closely.\nNot everything shows up at first glance.\n\n' },
     { path: `${base}/modules/fs/.secret.part`, name: '.secret.part', type: 'file', content: 'FRAG-ALPHA', hidden: true },
     { path: `${base}/modules/proc`, name: 'proc', type: 'dir' },
     { path: `${base}/modules/proc/report.log`, name: 'report.log', type: 'file', content: '──────────────────────────────────────────────\nPROCESS MODULE REPORT\n──────────────────────────────────────────────\n\nA system scan detected unusual activity inside\nthe running processes.\n\nClues:\n\n • One process is a large malicious process \n   compared to normal system activity.\n\n • This suspicious process also spawned two\n   helper processes (children).\n\n • Your task is to identify and terminate the malicious process and then run the cleanup to restore.\n' },
-    { path: `${base}/modules/proc/cleanup.sh`, name: 'cleanup.sh', type: 'file', content: '#!/bin/sh\necho Cleanup running', exec: false }
+    { path: `${base}/modules/proc/cleanup.sh`, name: 'cleanup.sh', type: 'file', content: '#!/bin/sh\necho Cleanup', exec: false }
   ];
 
   // remove existing nodes and processes for workspace

@@ -3,21 +3,20 @@ import '../styles/cheatsheet.css';
 
 export default function CheatSheet({ onClose }) {
   const commands = [
-    { cmd: 'ls', desc: 'List files in current directory', category: 'Navigation' },
-    { cmd: 'ls -a', desc: 'List all files including hidden ones', category: 'Navigation' },
-    { cmd: 'cd <dir>', desc: 'Change to specified directory', category: 'Navigation' },
+    { cmd: 'ls', desc: 'list files', category: 'Navigation' },
+    { cmd: 'ls -a', desc: 'list all (hidden)', category: 'Navigation' },
+    { cmd: 'cd <dir>', desc: 'Change directory', category: 'Navigation' },
     { cmd: 'pwd', desc: 'Print working directory', category: 'Navigation' },
-    { cmd: 'cat <file>', desc: 'Display file contents', category: 'File Operations' },
-    { cmd: 'diff file1 file2', desc: 'Compare two files', category: 'File Operations' },
-    { cmd: 'tar -xvzf file.tar.gz', desc: 'Extract compressed archive', category: 'File Operations' },
-    { cmd: 'grep <pattern> <file>', desc: 'Search for pattern in file', category: 'File Operations' },
-    { cmd: 'ps -ef', desc: 'List all running processes', category: 'Process Management' },
-    { cmd: 'ps -ef --forest', desc: 'Show process tree', category: 'Process Management' },
-    { cmd: 'lsof -p <pid>', desc: 'List open files by process', category: 'Process Management' },
-    { cmd: 'kill -9 <pid>', desc: 'Force kill a process', category: 'Process Management' },
+    { cmd: 'cat <file>', desc: 'read the contents of file', category: 'File Operations' },
+    { cmd: 'diff file1 file2', desc: 'to compare difference between 2 files', category: 'File Operations' },
+    { cmd: 'tar -xvzf file.tar.gz', desc: 'to extract from archives', category: 'File Operations' },
+    { cmd: 'ps -ef', desc: 'to check the status of running processes', category: 'Process Management' },
+    { cmd: 'ps -ef --forest', desc: 'see the hierarchical relationship between processes', category: 'Process Management' },
+    { cmd: 'lsof -p <pid>', desc: 'To identify which processes have a specific file open', category: 'Process Management' },
+    { cmd: 'kill -9 <pid>', desc: 'To terminate or kill the process', category: 'Process Management' },
     { cmd: 'cp src dst', desc: 'Copy file from source to destination', category: 'File Operations' },
-    { cmd: 'chmod +x script.sh', desc: 'Make file executable', category: 'Permissions' },
-    { cmd: './cleanup.sh', desc: 'Execute script in current directory', category: 'Execution' }
+    { cmd: 'chmod +x <filename>', desc: 'to add executable permissions to the file', category: 'Permissions' },
+    { cmd: './<script>', desc: 'to run the script', category: 'Execution' }
   ];
 
   const categories = [...new Set(commands.map(c => c.category))];

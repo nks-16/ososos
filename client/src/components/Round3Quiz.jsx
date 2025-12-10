@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/round3.css';
+import logo from '../nisb-logo-white.png';
 
 export default function Round3Quiz({ sessionId, username, onComplete }) {
   const [state, setState] = useState(null);
@@ -70,6 +71,7 @@ export default function Round3Quiz({ sessionId, username, onComplete }) {
 
   return (
     <div className="round3-container">
+      <img src={logo} alt="NISB Logo" style={{ position: 'absolute', top: '20px', left: '20px', height: '40px', zIndex: 100 }} />
       <div className="terminal-box">
         <div className="term-header">
           <div className="term-buttons">

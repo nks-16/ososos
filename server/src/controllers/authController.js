@@ -68,6 +68,14 @@ async function login(req, res) {
   }
 
   const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '8h' });
+  
+  console.log(`User ${username} logged in with progress:`, {
+    round1Score: user.round1Score,
+    round2Score: user.round2Score,
+    round3Score: user.round3Score,
+    totalScore: user.totalScore
+  });
+  
   return res.json({ 
     token, 
     workspaceId: user.workspaceId, 

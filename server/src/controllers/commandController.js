@@ -71,7 +71,7 @@ async function runCommand(req, res) {
         const m = raw.match(/^cp\s+(.+)\s+(.+)$/);
         output = await cpService.cmd_cp(wId, workspace.cwd, m ? m[1] : '', m ? m[2] : '');
 
-        // Specific rule: detect cp mount.clean -> mount.conf and award stage1
+        // Specific rule: detect cp mount.clean -> mount.conf and set flag that cp was done
        try {
   const src = m && m[1] ? m[1].trim() : '';
   const dst = m && m[2] ? m[2].trim() : '';
@@ -87,21 +87,11 @@ async function runCommand(req, res) {
   const isMountDst = dstFull.endsWith('/mount.conf') || dstFull === '/system/root/modules/fs/mount.conf';
   const inFsDir = workspace.cwd.includes('/modules/fs') || dstFull.includes('/modules/fs');
 
-  // check for presence of three fragments in this workspace
-  const fragAlpha = await FileNode.findOne({ workspaceId: wId, path: '/system/root/modules/fs/.secret.part' }); // FRAG-ALPHA
-  const fragBetaNode = await FileNode.findOne({ workspaceId: wId, path: '/system/root/modules/fs/mount.clean' }); // mount.clean contains FRAG-BETA
-  const fragGamma = await FileNode.findOne({ workspaceId: wId, path: '/system/root/tmp/fragment3.txt' }); // created by tar extraction
-
-  const hasAlpha = !!fragAlpha;
-  const hasBeta = !!(fragBetaNode && fragBetaNode.content && fragBetaNode.content.includes('FRAG-BETA'));
-  const hasGamma = !!fragGamma;
-
-  if (isMountDst && inFsDir && hasAlpha && hasBeta && hasGamma && !(workspace.flags && workspace.flags.stage1Complete)) {
+  // If user did cp to mount.conf, set a flag
+  if (isMountDst && inFsDir) {
     workspace.flags = workspace.flags || {};
-    workspace.flags.stage1Complete = true;
-    workspace.score = (workspace.score || 0) + 50;
-    await workspace.save();
-    output = (output ? output + '\n' : '') + '[SUCCESS] Filesystem configuration restored.\nFragments collected successfully.\nStage 2 unlocked: Process Module.';
+    workspace.flags.cpDone = true;
+    console.log('✓ CP command executed to mount.conf');
   }
 } catch (e) {
   // ignore detection errors
@@ -148,22 +138,75 @@ async function runCommand(req, res) {
   // Deduct -1 point for this command execution (apply to all parsed commands)
   try {
     workspace.score = (workspace.score || 0) - 1;
+    console.log(`Command executed: "${raw}", New score: ${workspace.score}`);
+
+    // Check Stage 1 completion after every command (if cp was done and all fragments collected)
+    const prevStage1 = !!(workspace.flags && workspace.flags.stage1Complete);
+    if (!prevStage1) {
+      // Check if all fragments have been collected
+      const fragAlpha = await FileNode.findOne({ workspaceId: wId, path: '/system/root/modules/fs/.secret.part' });
+      const fragBetaNode = await FileNode.findOne({ workspaceId: wId, path: '/system/root/modules/fs/mount.clean' });
+      const fragGamma = await FileNode.findOne({ workspaceId: wId, path: '/system/root/tmp/fragment3.txt' });
+      const mountConf = await FileNode.findOne({ workspaceId: wId, path: '/system/root/modules/fs/mount.conf' });
+      
+      const hasAlpha = !!fragAlpha;
+      const hasBeta = !!(fragBetaNode && fragBetaNode.content && fragBetaNode.content.includes('FRAG-BETA'));
+      const hasGamma = !!fragGamma;
+      const confRestored = !!(mountConf && mountConf.content && mountConf.content.includes('FRAG-BETA'));
+      const cpDone = !!(workspace.flags && workspace.flags.cpDone);
+      
+      console.log('=== Stage 1 Check ===');
+      console.log('Flags:', { hasAlpha, hasBeta, hasGamma, confRestored, cpDone, alreadyComplete: prevStage1 });
+      console.log('=====================');
+      
+      if (hasAlpha && hasBeta && hasGamma && confRestored && cpDone) {
+        console.log('✓✓✓ Stage 1 COMPLETING NOW! ✓✓✓');
+        workspace.flags.stage1Complete = true;
+        workspace.score = (workspace.score || 0) + 50;
+        output = (output ? output + '\n' : '') + '\n[SUCCESS] Filesystem configuration restored.\nFragments collected successfully.\nStage 2 unlocked: Process Module - navigate to /modules/proc.\n';
+      }
+    }
 
     // After possible modifications above (stage1 awarding), check stage2 awarding:
     if (!prevStage2 && workspace.flags && workspace.flags.stage2Complete) {
+      console.log('✓ Stage 2 COMPLETED! Round 1 finished.');
       workspace.score = (workspace.score || 0) + 50;
       if (!output.includes('[STAGE 2 COMPLETE]')) {
-        output = (output ? output + '\n' : '') + '[STAGE 2 COMPLETE] System fully restored.';
+        output = (output ? output + '\n' : '') + '\n' + '='.repeat(60) + '\n[STAGE 2 COMPLETE] System fully restored!\n' + '='.repeat(60) + '\n\n✓ Malicious processes cleaned\n✓ +50 points awarded\n\n✓ ROUND 1 COMPLETE!\nTotal Score: ' + workspace.score + '\n\nReturning to main menu...\n';
       }
     }
     await workspace.save();
+    
+    // Update User's round1Score and totalScore in real-time
+    if (user) {
+      user.round1Score = workspace.score;
+      user.totalScore = user.round1Score + user.round2Score + user.round3Score;
+      await user.save();
+      console.log(`Real-time score update for ${user.username}: round1=${user.round1Score}, total=${user.totalScore}`);
+    }
   } catch (err) {
     console.error('Failed updating score:', err);
   }
 
   await workspaceService.logAction(workspace._id, user ? user._id : null, raw, output || '');
   const refreshed = await Workspace.findById(workspace._id);
-  return res.json({ output: output || '', newPrompt: refreshed.cwd, newScore: refreshed.score, flags: refreshed.flags });
+  const completed = !!(refreshed.flags && refreshed.flags.stage2Complete);
+  
+  // Fetch updated user to get current totalScore
+  let totalScore = 0;
+  if (user) {
+    const updatedUser = await require('../models/User').findById(user._id);
+    totalScore = updatedUser ? updatedUser.totalScore : 0;
+  }
+  
+  return res.json({ 
+    output: output || '', 
+    newPrompt: refreshed.cwd, 
+    newScore: refreshed.score, 
+    flags: refreshed.flags, 
+    completed,
+    totalScore // Include total score in response
+  });
 }
 
 module.exports = { runCommand };
