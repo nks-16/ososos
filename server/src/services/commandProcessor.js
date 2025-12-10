@@ -1,8 +1,12 @@
 const path = require('path');
-const FileNode = require('../models/FileNode');
+const pathLib = require('path');            // if not already present
+const FileNode = require('../models/FileNode'); // keep if used in file
+const ProcessModel = require('../models/Process'); 
 const Process = require('../models/Process');
 const Workspace = require('../models/Workspace');
 const mongoose = require('mongoose');
+
+
 
 // helper: normalize path (very simple)
 function normPath(base, p) {
@@ -90,38 +94,40 @@ async function cmd_diff(workspaceId, cwd, a, b) {
   return lines.join('\n');
 }
 
-async function cmd_tar_extract(workspaceId, cwd, archive) {
-  const target = normPath(cwd, archive);
-  const node = await FileNode.findOne({ workspaceId, path: target, type: 'file' });
-  if (!node) return `tar: ${archive}: Cannot open: No such file`;
-  // Check metadata for simulated tar contents
-  const meta = node.metadata || {};
-  if (!meta.tar_extract) return 'tar: no files to extract';
-  // meta.tar_extract is an array of { path, content, hidden?, exec? }
-  const created = [];
-  const session = await mongoose.startSession().catch(()=>null);
-  let useTxn = !!session;
-  if (useTxn) session.startTransaction();
-  try {
-    for (const item of meta.tar_extract) {
-      const p = normPath(cwd, item.path);
-      const name = p.split('/').pop();
-      await FileNode.updateOne(
-        { workspaceId, path: p },
-        { $set: { workspaceId, path: p, name, type: 'file', content: item.content || '', hidden: !!item.hidden, exec: !!item.exec }, $inc: { version: 1 } },
-        { upsert: true, session: session || undefined }
-      );
-      created.push(p);
-    }
-    if (useTxn) await session.commitTransaction();
-    if (session) session.endSession();
-    return `x ${created.join('\nx ')}`;
-  } catch (err) {
-    if (useTxn) await session.abortTransaction();
-    if (session) session.endSession();
-    return 'tar: extraction failed';
+async function cmd_tar_extract(workspaceId, cwd, tarname) {
+  // normalize tar path (absolute or relative)
+  const tarPath = tarname && tarname.startsWith('/') ? tarname : (cwd === '/' ? `/${tarname}` : `${cwd}/${tarname}`);
+  const tarNode = await FileNode.findOne({ workspaceId, path: tarPath });
+  if (!tarNode) return `tar: ${tarname}: Cannot open: No such file or directory`;
+
+  // We're simplifying: running tar on any backup.tar.gz will create fragment3.txt
+  // in the same directory for that workspace if it doesn't already exist.
+  const outPath = pathLib.posix.join(pathLib.posix.dirname(tarPath), 'fragment3.txt');
+
+  // If file already exists in this workspace, indicate nothing to extract (idempotent)
+  const exists = await FileNode.findOne({ workspaceId, path: outPath });
+  if (exists) {
+    return 'Nothing to extract (files already present)';
   }
+
+  // Create the fragment file in the DB for this workspace
+  const node = {
+    workspaceId,
+    path: outPath,
+    name: pathLib.posix.basename(outPath),
+    type: 'file',
+    content: 'FRAG-GAMMA\n#VALID',
+    hidden: false,
+    exec: false,
+    meta: {}
+  };
+
+  await FileNode.create(node);
+
+  // Return tar-like output
+  return `x ${node.name}`;
 }
+
 
 async function cmd_cp(workspaceId, cwd, src, dst) {
   const S = normPath(cwd, src);
@@ -163,44 +169,66 @@ async function cmd_run(workspace, cwd, scriptName) {
   return `${scriptName}: (script runs, but nothing special happened)`;
 }
 
-async function cmd_ps(workspaceId, forest) {
-  const procs = await Process.find({ workspaceId }).sort({ pid: 1 });
+// show processes (non-forest or forest tree view)
+async function cmd_ps(workspaceId, forest = false) {
+  // support being called with raw string options too (e.g., '-ef --forest' or '--forest')
+  if (typeof forest === 'string') {
+    forest = /--forest/.test(forest) || /-f/.test(forest) && /-e/.test(forest);
+  }
+
+  const procs = await ProcessModel.find({ workspaceId }).lean();
+  if (!procs || procs.length === 0) return '(no processes)';
+
   if (!forest) {
-    const lines = procs.map(p => `${p.name.padEnd(10)} ${p.pid.toString().padStart(5)} ${p.ppid.toString().padStart(5)} ${p.cpu}%`);
-    return lines.join('\n');
+    // simple table-ish output: user pid ppid cpu% name
+    return procs.map(p => `${p.user || 'user'}\t${p.pid}\t${p.ppid}\t${p.cpu || 0}%\t${p.name}`).join('\n');
   } else {
-    // simple tree print
+    // build pid->node map for tree rendering
     const byPid = {};
-    procs.forEach(p => byPid[p.pid] = p);
-    const roots = procs.filter(p => !byPid[p.ppid]);
-    const lines = [];
-    function walk(p, prefix = '') {
-      lines.push(`${prefix}${p.pid} ${p.name}`);
-      const children = procs.filter(q => q.ppid === p.pid);
-      for (let i = 0; i < children.length; ++i) {
-        walk(children[i], prefix + ' ├─ ');
-      }
+    procs.forEach(p => byPid[p.pid] = { ...p, children: [] });
+    procs.forEach(p => {
+      if (byPid[p.ppid]) byPid[p.ppid].children.push(byPid[p.pid]);
+    });
+
+    // find roots: ppid missing or ppid === 1
+    const roots = Object.values(byPid).filter(n => !byPid[n.ppid] || n.ppid === 1);
+
+    function render(node, prefix = '') {
+      // display pid name (cpu%)
+      let line = `${prefix}${node.pid} ${node.name} (${node.cpu || 0}%)`;
+      // children lines
+      const kids = node.children.map((c, i) => {
+        const branch = (i === node.children.length - 1) ? ' └─ ' : ' ├─ ';
+        const childPrefix = prefix + branch;
+        // for deeper levels, use same branch char — simple visual
+        return render(c, childPrefix);
+      });
+      return [line, ...kids].join('\n');
     }
-    roots.forEach(r => walk(r));
-    return lines.join('\n');
+
+    // if multiple roots, join with newline
+    return roots.map(r => render(r)).join('\n');
   }
 }
 
+// list open files for a pid (workspace-scoped)
 async function cmd_lsof(workspaceId, pid) {
-  const p = await Process.findOne({ workspaceId, pid });
-  if (!p) return `lsof: process ${pid} not found`;
-  const open = p.metadata && p.metadata.openFiles ? p.metadata.openFiles : [];
-  if (open.length === 0) return '(no files open)';
-  return open.join('\n');
+  if (!pid || isNaN(pid)) return `lsof: pid ${pid} not found`;
+  const proc = await ProcessModel.findOne({ workspaceId, pid }).lean();
+  if (!proc) return `lsof: pid ${pid} not found`;
+  const files = (proc.metadata && (proc.metadata.openFiles || proc.metadata.open_files)) || proc.openFiles || [];
+  return (files.length === 0) ? '(no open files)' : files.join('\n');
 }
 
+// kill a process (workspace-scoped)
 async function cmd_kill(workspaceId, pid) {
-  const p = await Process.findOne({ workspaceId, pid });
-  if (!p) return `kill: ${pid}: No such process`;
-  // Remove children automatically
-  await Process.deleteMany({ workspaceId, $or: [{ pid }, { ppid: pid }] });
-  return `[OK] Terminated process ${pid}\n[OK] Child processes stopped`;
+  if (!pid || isNaN(pid)) return `kill: ${pid}: invalid pid`;
+  // remove the parent and any children (ppid == pid) in this workspace only
+  await ProcessModel.deleteMany({ workspaceId, $or: [{ pid }, { ppid: pid }] });
+
+  return `[OK] Terminated process ${pid} and its children.`;
 }
+
 
 async function cmd_rm(workspaceId, cwd, target) {
   const T = normPath(cwd, target);

@@ -1,6 +1,8 @@
+// utils/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Workspace = require('../models/Workspace');
+const workspaceService = require('../services/workspaceService');
 const secret = process.env.JWT_SECRET || 'changeme';
 
 async function authMiddleware(req, res, next) {
@@ -11,13 +13,32 @@ async function authMiddleware(req, res, next) {
     const payload = jwt.verify(token, secret);
     const user = await User.findById(payload.id);
     if (!user) return res.status(401).json({ error: 'User not found' });
-    req.user = user;
+
+    // ensure workspace exists and is seeded; attach to req
+    let ws = null;
     if (user.workspaceId) {
-      const ws = await Workspace.findById(user.workspaceId);
-      if (ws) req.workspace = ws;
+      ws = await Workspace.findById(user.workspaceId);
+      if (!ws) {
+        // workspace record missing: create+seed and attach
+        ws = await workspaceService.createAndSeed(`${user.username}-ws`);
+        user.workspaceId = ws._id;
+        await user.save();
+      } else {
+        // ensure seed exists (idempotent)
+        await workspaceService.seedWorkspace(ws);
+      }
+    } else {
+      // user has no workspace: create and seed one, save to user
+      ws = await workspaceService.createAndSeed(`${user.username}-ws`);
+      user.workspaceId = ws._id;
+      await user.save();
     }
+
+    req.user = user;
+    req.workspace = ws;
     next();
   } catch (err) {
+    console.error('authMiddleware err', err);
     return res.status(401).json({ error: 'Invalid token' });
   }
 }

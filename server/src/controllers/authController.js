@@ -1,3 +1,4 @@
+// controllers/authController.js  (overwrite register)
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -7,16 +8,28 @@ const workspaceService = require('../services/workspaceService');
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 
 async function register(req, res) {
-  const { username, password, role } = req.body;
-  if (!username || !password) return res.status(400).json({ error: 'username & password required' });
-  const existing = await User.findOne({ username });
-  if (existing) return res.status(400).json({ error: 'username exists' });
-  const ws = await Workspace.create({ name: `${username}-ws` });
-  const hash = await bcrypt.hash(password, 10);
-  const user = await User.create({ username, passwordHash: hash, role: role || 'player', workspaceId: ws._id });
-  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '8h' });
-  return res.json({ token, workspaceId: ws._id, username: user.username, role: user.role });
+  try {
+    const { username, password, role } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'username & password required' });
+
+    const existing = await User.findOne({ username });
+    if (existing) return res.status(400).json({ error: 'username exists' });
+
+    // Create workspace AND seed it using createAndSeed (atomic for our use case)
+    const ws = await workspaceService.createAndSeed(`${username}-ws`);
+
+    // now create user and attach workspaceId
+    const hash = await bcrypt.hash(password, 10);
+    const user = await User.create({ username, passwordHash: hash, role: role || 'player', workspaceId: ws._id });
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '8h' });
+
+    return res.json({ token, workspaceId: ws._id, username: user.username, role: user.role });
+  } catch (err) {
+    console.error('register error', err);
+    return res.status(500).json({ error: 'registration failed' });
+  }
 }
+
 
 async function login(req, res) {
   const { username, password } = req.body;
@@ -25,6 +38,20 @@ async function login(req, res) {
   if (!user) return res.status(400).json({ error: 'invalid credentials' });
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(400).json({ error: 'invalid credentials' });
+
+  // ensure user has a workspace
+  let ws = null;
+  if (!user.workspaceId) {
+    ws = await Workspace.create({ name: `${username}-ws`, cwd: '/system/root' });
+    await workspaceService.seedWorkspace(ws);
+    user.workspaceId = ws._id;
+    await user.save();
+  } else {
+    ws = await Workspace.findById(user.workspaceId);
+    // if workspace exists but seems unseeded, ensure seeding
+    await workspaceService.seedWorkspace(ws);
+  }
+
   const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '8h' });
   return res.json({ token, workspaceId: user.workspaceId, username: user.username, role: user.role });
 }
