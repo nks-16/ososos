@@ -48,7 +48,8 @@ export default function App() {
 
   const fetchProgress = async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/progress/progress/${username}`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_URL}/api/progress/progress/${username}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -96,7 +97,8 @@ export default function App() {
   const handleRoundComplete = async (round, score) => {
     console.log('handleRoundComplete called:', { round, score, username });
     try {
-      const response = await fetch('http://localhost:4000/api/progress/complete-round', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_URL}/api/progress/complete-round`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

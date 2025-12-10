@@ -15,7 +15,8 @@ export default function Round3Quiz({ sessionId, username, onComplete }) {
   const initializeGame = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:4000/api/round3/initialize', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_URL}/api/round3/initialize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId })
@@ -32,7 +33,8 @@ export default function Round3Quiz({ sessionId, username, onComplete }) {
 
   const handleAnswerSubmit = async (passageIndex, questionIndex, answer) => {
     try {
-      const response = await fetch('http://localhost:4000/api/round3/submit-answer', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_URL}/api/round3/submit-answer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, passageIndex, questionIndex, answer })
@@ -40,7 +42,7 @@ export default function Round3Quiz({ sessionId, username, onComplete }) {
       const result = await response.json();
       
       // Refresh state
-      const stateResponse = await fetch(`http://localhost:4000/api/round3/state/${sessionId}`);
+      const stateResponse = await fetch(`${API_URL}/api/round3/state/${sessionId}`);
       const updatedState = await stateResponse.json();
       setState(updatedState);
       

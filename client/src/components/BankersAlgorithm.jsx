@@ -17,7 +17,8 @@ export default function BankersAlgorithm({ sessionId, username, onComplete }) {
   const initializeGame = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:4000/api/bankers/initialize', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_URL}/api/bankers/initialize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId })
@@ -35,7 +36,8 @@ export default function BankersAlgorithm({ sessionId, username, onComplete }) {
 
   const handleCheckSafety = async () => {
     try {
-      const response = await fetch('http://localhost:4000/api/bankers/check-safety', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_URL}/api/bankers/check-safety`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId })
@@ -44,7 +46,7 @@ export default function BankersAlgorithm({ sessionId, username, onComplete }) {
       setSafetyResult(result);
       
       // Refresh complete state
-      const stateResponse = await fetch(`http://localhost:4000/api/bankers/state/${sessionId}`);
+      const stateResponse = await fetch(`${API_URL}/api/bankers/state/${sessionId}`);
       const updatedState = await stateResponse.json();
       setState(updatedState);
       
@@ -83,7 +85,8 @@ export default function BankersAlgorithm({ sessionId, username, onComplete }) {
     }
 
     try {
-      const response = await fetch('http://localhost:4000/api/bankers/request', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_URL}/api/bankers/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, processIndex: selectedProcess, request: requestInts })
@@ -91,7 +94,7 @@ export default function BankersAlgorithm({ sessionId, username, onComplete }) {
       const result = await response.json();
       
       // Refresh state
-      const stateResponse = await fetch(`http://localhost:4000/api/bankers/state/${sessionId}`);
+      const stateResponse = await fetch(`${API_URL}/api/bankers/state/${sessionId}`);
       const updatedState = await stateResponse.json();
       setState(updatedState);
       

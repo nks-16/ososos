@@ -55,6 +55,35 @@ async function runCommand(req, res) {
       case 'cat': {
         const m = raw.match(/^cat\s+(.+)$/);
         output = await cpService.cmd_cat(wId, workspace.cwd, m ? m[1] : '');
+        
+        // Track fragment collection when user cats them
+        try {
+          const filename = m && m[1] ? m[1].trim() : '';
+          const resolvePath = (p) => {
+            if (!p) return '';
+            if (p.startsWith('/')) return p;
+            return (workspace.cwd === '/' ? `/${p}` : `${workspace.cwd}/${p}`);
+          };
+          const fullPath = resolvePath(filename);
+          
+          workspace.flags = workspace.flags || {};
+          
+          if (fullPath.includes('.secret.part') || fullPath.includes('/system/root/modules/fs/.secret.part')) {
+            workspace.flags.fragAlphaRead = true;
+            workspace.markModified('flags');
+            console.log('✓ Fragment ALPHA collected');
+          } else if (fullPath.includes('mount.clean') || fullPath.includes('/system/root/modules/fs/mount.clean')) {
+            workspace.flags.fragBetaRead = true;
+            workspace.markModified('flags');
+            console.log('✓ Fragment BETA collected');
+          } else if (fullPath.includes('fragment3.txt') || fullPath.includes('/system/root/tmp/fragment3.txt')) {
+            workspace.flags.fragGammaRead = true;
+            workspace.markModified('flags');
+            console.log('✓ Fragment GAMMA collected');
+          }
+        } catch (e) {
+          console.error('Error tracking fragment collection:', e);
+        }
         break;
       }
       case 'diff': {
@@ -91,10 +120,11 @@ async function runCommand(req, res) {
   if (isMountDst && inFsDir) {
     workspace.flags = workspace.flags || {};
     workspace.flags.cpDone = true;
-    console.log('✓ CP command executed to mount.conf');
+    workspace.markModified('flags');
+    console.log('✓ CP command executed to mount.conf, cpDone flag set');
   }
 } catch (e) {
-  // ignore detection errors
+  console.error('Error setting cpDone flag:', e);
 }
         break;
       }
@@ -143,15 +173,12 @@ async function runCommand(req, res) {
     // Check Stage 1 completion after every command (if cp was done and all fragments collected)
     const prevStage1 = !!(workspace.flags && workspace.flags.stage1Complete);
     if (!prevStage1) {
-      // Check if all fragments have been collected
-      const fragAlpha = await FileNode.findOne({ workspaceId: wId, path: '/system/root/modules/fs/.secret.part' });
-      const fragBetaNode = await FileNode.findOne({ workspaceId: wId, path: '/system/root/modules/fs/mount.clean' });
-      const fragGamma = await FileNode.findOne({ workspaceId: wId, path: '/system/root/tmp/fragment3.txt' });
+      // Check if all fragments have been collected by reading them with cat
       const mountConf = await FileNode.findOne({ workspaceId: wId, path: '/system/root/modules/fs/mount.conf' });
       
-      const hasAlpha = !!fragAlpha;
-      const hasBeta = !!(fragBetaNode && fragBetaNode.content && fragBetaNode.content.includes('FRAG-BETA'));
-      const hasGamma = !!fragGamma;
+      const hasAlpha = !!(workspace.flags && workspace.flags.fragAlphaRead);
+      const hasBeta = !!(workspace.flags && workspace.flags.fragBetaRead);
+      const hasGamma = !!(workspace.flags && workspace.flags.fragGammaRead);
       const confRestored = !!(mountConf && mountConf.content && mountConf.content.includes('FRAG-BETA'));
       const cpDone = !!(workspace.flags && workspace.flags.cpDone);
       

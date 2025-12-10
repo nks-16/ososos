@@ -15,7 +15,7 @@ async function doSeedForWorkspace(workspaceId) {
 
   const nodes = [
     { path: `${base}`, name: 'root', type: 'dir' },
-    { path: `${base}/readme.txt`, name: 'readme.txt', type: 'file', content: 'Welcome to SysBox simulation\nStage 1: FileSystems\n A config file inside the filesystem module was corrupted\nduring a crash. Your goal is to:\n • Explore the filesystem\n  • Inspect the config files inside filesystem modules\n • Extract any backups found in /tmp\n• Compare files if needed\n• Restore a correct config to complete Stage 1' },
+    { path: `${base}/readme.txt`, name: 'readme.txt', type: 'file', content: 'Welcome to SysBox simulation\nStage 1: FileSystems\n A config file inside the filesystem module was corrupted\nduring a crash. Your goal is to:\n • Explore the filesystem\n  • Inspect the config files inside filesystem modules\n • Extract any backups found in tmp directory\n• Compare files if needed\n• Restore a correct config to complete Stage 1\n\nTip: Use relative paths when in the directory (e.g., backup.tar.gz)\n     or full paths like /system/root/tmp/backup.tar.gz' },
     { path: `${base}/tmp`, name: 'tmp', type: 'dir' },
     { path: `${base}/tmp/backup.tar.gz`, name: 'backup.tar.gz', type: 'file', content: '', metadata: { tar_extract: [{ path: 'fragment3.txt', content: 'FRAG-GAMMA' }] } },
     { path: `${base}/tmp/fragment3.txt`, name: 'fragment3.txt', type: 'file', content: 'FRAG-GAMMA', hidden: false },

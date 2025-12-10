@@ -30,7 +30,8 @@ export default function Terminal({ token, username, onComplete, onScoreUpdate })
         const workspaceId = localStorage.getItem('oscape_workspace');
         if (workspaceId && token) {
           console.log('Fetching workspace score for:', workspaceId);
-          const response = await fetch(`http://localhost:4000/api/progress/workspace/${workspaceId}`, {
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+          const response = await fetch(`${API_URL}/api/progress/workspace/${workspaceId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const data = await response.json();
