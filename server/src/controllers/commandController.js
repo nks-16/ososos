@@ -189,6 +189,8 @@ async function runCommand(req, res) {
       if (hasAlpha && hasBeta && hasGamma && confRestored && cpDone) {
         console.log('✓✓✓ Stage 1 COMPLETING NOW! ✓✓✓');
         workspace.flags.stage1Complete = true;
+        workspace.flags.stage1CompletedThisCommand = true; // Mark that it was completed in this command
+        workspace.markModified('flags');
         workspace.score = (workspace.score || 0) + 50;
         output = (output ? output + '\n' : '') + '\n[SUCCESS] Filesystem configuration restored.\nFragments collected successfully.\nStage 2 unlocked: Process Module - navigate to /modules/proc.\n';
       }
@@ -198,9 +200,8 @@ async function runCommand(req, res) {
     if (!prevStage2 && workspace.flags && workspace.flags.stage2Complete) {
       console.log('✓ Stage 2 COMPLETED! Round 1 finished.');
       workspace.score = (workspace.score || 0) + 50;
-      if (!output.includes('[STAGE 2 COMPLETE]')) {
-        output = (output ? output + '\n' : '') + '\n' + '='.repeat(60) + '\n[STAGE 2 COMPLETE] System fully restored!\n' + '='.repeat(60) + '\n\n✓ Malicious processes cleaned\n✓ +50 points awarded\n\n✓ ROUND 1 COMPLETE!\nTotal Score: ' + workspace.score + '\n\nReturning to main menu...\n';
-      }
+      workspace.markModified('flags');
+      output = (output ? output + '\n' : '') + '\n\n' + '='.repeat(60) + '\n[STAGE 2 COMPLETE] Process Module Restored!\n' + '='.repeat(60) + '\n\n✓ Malicious processes terminated\n✓ System cleanup executed\n✓ +50 points awarded\n\n🎉 ROUND 1 COMPLETE! 🎉\n\nFinal Score: ' + workspace.score + '\nRound 2 is now unlocked!\n\nReturning to main menu...\n';
     }
     await workspace.save();
     

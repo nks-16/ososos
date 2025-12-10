@@ -163,8 +163,9 @@ async function cmd_run(workspace, cwd, scriptName) {
     // Clean processes: remove any processes with name updater.py or worker.py
     await Process.deleteMany({ workspaceId: workspace._id, name: { $in: ['updater.py', 'worker.py'] } });
     workspace.flags.stage2Complete = true;
+    workspace.markModified('flags');
     await workspace.save();
-    return '[CLEANUP] Removing /opt/updater/*\n[CLEANUP] updater removed.\n[STAGE 2 COMPLETE] System fully restored.';
+    return '[CLEANUP] Removing /opt/updater/*\n[CLEANUP] Malicious processes and files removed.';
   }
   return `${scriptName}: (script runs, but nothing special happened)`;
 }
