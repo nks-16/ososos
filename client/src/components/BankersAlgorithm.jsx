@@ -17,7 +17,7 @@ export default function BankersAlgorithm({ sessionId, username, onComplete }) {
   const initializeGame = async () => {
     try {
       setLoading(true);
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const API_URL = 'https://ososos.onrender.com';
       const response = await fetch(`${API_URL}/api/bankers/initialize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -36,7 +36,7 @@ export default function BankersAlgorithm({ sessionId, username, onComplete }) {
 
   const handleCheckSafety = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const API_URL = 'https://ososos.onrender.com';
       const response = await fetch(`${API_URL}/api/bankers/check-safety`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,7 +85,7 @@ export default function BankersAlgorithm({ sessionId, username, onComplete }) {
     }
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const API_URL = 'https://ososos.onrender.com';
       const response = await fetch(`${API_URL}/api/bankers/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

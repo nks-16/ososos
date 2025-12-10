@@ -48,7 +48,7 @@ export default function App() {
 
   const fetchProgress = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const API_URL = 'https://ososos.onrender.com';
       const response = await fetch(`${API_URL}/api/progress/progress/${username}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -97,7 +97,7 @@ export default function App() {
   const handleRoundComplete = async (round, score) => {
     console.log('handleRoundComplete called:', { round, score, username });
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const API_URL = 'https://ososos.onrender.com';
       const response = await fetch(`${API_URL}/api/progress/complete-round`, {
         method: 'POST',
         headers: { 

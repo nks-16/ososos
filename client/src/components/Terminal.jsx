@@ -30,7 +30,7 @@ export default function Terminal({ token, username, onComplete, onScoreUpdate })
         const workspaceId = localStorage.getItem('oscape_workspace');
         if (workspaceId && token) {
           console.log('Fetching workspace score for:', workspaceId);
-          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+          const API_URL = 'https://ososos.onrender.com';
           const response = await fetch(`${API_URL}/api/progress/workspace/${workspaceId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
