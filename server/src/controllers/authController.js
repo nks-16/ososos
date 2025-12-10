@@ -15,12 +15,27 @@ async function register(req, res) {
     const existing = await User.findOne({ username });
     if (existing) return res.status(400).json({ error: 'username exists' });
 
-    // Create workspace AND seed it using createAndSeed (atomic for our use case)
-    const ws = await workspaceService.createAndSeed(`${username}-ws`);
-
-    // now create user and attach workspaceId
+    // Create user first with minimal workspace
     const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ username, passwordHash: hash, role: role || 'player', workspaceId: ws._id });
+    const ws = await Workspace.create({ 
+      name: `${username}-ws`, 
+      cwd: '/system/root', 
+      flags: { stage1Complete: false, stage2Complete: false }, 
+      score: 0 
+    });
+    
+    const user = await User.create({ 
+      username, 
+      passwordHash: hash, 
+      role: role || 'player', 
+      workspaceId: ws._id 
+    });
+
+    // Seed workspace asynchronously (don't wait for it)
+    workspaceService.seedWorkspace(ws._id).catch(err => {
+      console.error('Async seeding error for', username, err);
+    });
+
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '8h' });
 
     return res.json({ 
@@ -41,7 +56,7 @@ async function register(req, res) {
     });
   } catch (err) {
     console.error('register error', err);
-    return res.status(500).json({ error: 'registration failed' });
+    return res.status(500).json({ error: 'registration failed', details: err.message });
   }
 }
 
