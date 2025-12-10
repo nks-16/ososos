@@ -28,6 +28,14 @@ export default function BankersAlgorithm({ sessionId, username, onComplete }) {
       setRequest(new Array(data.state.resources.length).fill(0));
       setMessage(data.message);
       setLoading(false);
+      
+      // Check if already completed
+      if (data.state.completed) {
+        setMessage(`ALL PROCESSES COMPLETED. Final Score: ${data.state.score}. Round 2 terminated.`);
+        if (onComplete) {
+          setTimeout(() => onComplete(2, data.state.score), 2000);
+        }
+      }
     } catch (error) {
       setMessage('Error initializing Round 2: ' + error.message);
       setLoading(false);
@@ -49,6 +57,15 @@ export default function BankersAlgorithm({ sessionId, username, onComplete }) {
       const stateResponse = await fetch(`${API_URL}/api/bankers/state/${sessionId}`);
       const updatedState = await stateResponse.json();
       setState(updatedState);
+      
+      // Check if completed after safety check
+      if (updatedState.completed) {
+        setMessage(`ALL PROCESSES COMPLETED. Final Score: ${updatedState.score}. Round 2 terminated.`);
+        if (onComplete) {
+          setTimeout(() => onComplete(2, updatedState.score), 2000);
+        }
+        return;
+      }
       
       setMessage(result.safe 
         ? `SAFE STATE detected. Sequence: [${(result.safeSequence || []).join(' -> ')}]` 
