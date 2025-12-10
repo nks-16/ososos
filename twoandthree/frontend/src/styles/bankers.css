@@ -1,0 +1,350 @@
+/* bankers.css - Refined for Terminal Consistency and Layout */
+
+/* ------------------------------------------------ */
+/* 1. GLOBAL TERMINAL STYLING */
+/* ------------------------------------------------ */
+
+.terminal-container {
+    background-color: #1e1e1e; /* Dark, non-black background for depth */
+    color: #00ff00; /* Primary terminal green text */
+    font-family: 'Consolas', 'Monospace', monospace; /* Monospace font for authenticity */
+    border: 2px solid #555;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+    padding: 0;
+    max-width: 1200px; /* Wider to accommodate table */
+    margin: 20px auto;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Scrollbar adjustment for better look */
+.terminal-content {
+    padding: 15px 25px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* ------------------------------------------------ */
+/* 2. HEADER AND NAVIGATION */
+/* ------------------------------------------------ */
+
+.terminal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    color: #fff;
+    padding: 8px 15px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom: 1px solid #111;
+}
+
+.terminal-header .header-title {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #f0f0f0; /* White/Light color for the header title */
+}
+
+.terminal-header .score-info {
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Styling for the small, non-obtrusive navigation buttons */
+.terminal-header button {
+    background: #555;
+    color: #fff;
+    border: 1px solid #777;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 0.85em;
+    transition: background-color 0.2s;
+}
+.terminal-header button:hover {
+    background: #777;
+}
+
+/* ------------------------------------------------ */
+/* 3. PROMPT AND MESSAGE OUTPUT */
+/* ------------------------------------------------ */
+
+.terminal-prompt {
+    color: #fff; /* White for prompt itself */
+    margin-bottom: 5px;
+    font-weight: bold;
+    line-height: 1.5;
+}
+
+.terminal-prompt .command-output {
+    color: #00ff00; /* Green for status messages */
+    font-weight: normal;
+}
+
+/* Consistent spacing for sections */
+.terminal-section {
+    margin: 20px 0;
+    padding-top: 10px;
+    border-top: 1px dashed #3a3a3a; /* Subtle divider */
+}
+
+.prompt-label {
+    color: #88ff88; /* Light green/cyan for labels */
+    font-weight: bold;
+    text-decoration: underline;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+}
+
+/* Status message styles */
+.message-output {
+    padding: 5px 0;
+    margin-top: 5px;
+    white-space: pre-wrap;
+}
+
+/* Request-specific alert placed under the Execute button */
+.request-alert {
+    padding: 12px 10px;
+    margin-top: 12px;
+    border-top: 1px dashed #3a3a3a;
+}
+
+.success-text {
+    color: #00ff00; /* Bright Green */
+}
+
+.error-text {
+    color: #ff6666; /* Reddish */
+}
+
+.info-text {
+    color: #00ffff; /* Cyan/Light Blue */
+}
+
+/* ------------------------------------------------ */
+/* 4. SYSTEM STATE TABLE (PROCESSES) */
+/* ------------------------------------------------ */
+
+.terminal-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 5px;
+    font-size: 0.95em;
+}
+
+.terminal-table th, .terminal-table td {
+    border: 1px solid #3a3a3a;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.terminal-table th {
+    background-color: #2a2a2a;
+    color: #00ffff; /* Cyan header text */
+    font-weight: normal;
+}
+
+.terminal-row {
+    transition: background-color 0.1s;
+}
+
+.terminal-row:hover {
+    background-color: #2a2a2a;
+    cursor: pointer;
+}
+
+.selected-row {
+    background-color: #444;
+    border-left: 5px solid #00ff00; /* Highlight selection */
+}
+
+.process-name-cmd {
+    color: #fff;
+    font-weight: bold;
+}
+
+.release-cmd {
+    color: #ff9900;
+    margin-left: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* ------------------------------------------------ */
+/* 5. RESOURCE STATUS BAR */
+/* ------------------------------------------------ */
+
+.resource-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+}
+
+.resource-stat {
+    background-color: #333;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.resource-name-cmd {
+    color: #00ffff;
+}
+
+.resource-value {
+    color: #ffff00;
+    font-weight: bold;
+}
+
+.total-allocated {
+    margin-top: 10px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-basis: 100%; /* forces it onto a new line */
+}
+
+/* ------------------------------------------------ */
+/* 6. COMMAND INPUT/REQUEST PANEL */
+/* ------------------------------------------------ */
+
+.terminal-command-panel {
+    margin-top: 20px;
+    border-top: 1px dashed #3a3a3a;
+    padding-top: 15px;
+}
+
+.terminal-prompt-input {
+    color: #fff;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.request-inputs-cmd {
+    display: flex;
+    gap: 25px; /* Increased gap for better separation */
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.input-group-cmd {
+    display: flex;
+    align-items: center;
+}
+
+.input-label-cmd {
+    color: #fff;
+    margin-right: 5px;
+}
+
+.terminal-input {
+    background-color: #000;
+    color: #ffff00; /* Yellow input text */
+    border: 1px solid #00ff00;
+    padding: 5px 7px;
+    width: 70px; /* Slightly wider input boxes */
+    font-family: inherit;
+    border-radius: 0; /* Keeps the terminal sharp edge look */
+}
+
+.terminal-input:focus {
+    outline: none;
+    border-color: #00ffff;
+}
+
+/* ------------------------------------------------ */
+/* 7. ACTION BUTTONS */
+/* ------------------------------------------------ */
+
+.terminal-action-area {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.terminal-action-button {
+    background: #444;
+    color: #00ff00; /* Green command text on dark button */
+    border: 1px solid #00ff00;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 0; /* Sharp terminal look */
+    font-family: inherit;
+    font-weight: bold;
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.terminal-action-button:hover:not(:disabled) {
+    background-color: #00ff00;
+    color: #1e1e1e; /* Reverse colors on hover */
+}
+
+.terminal-action-button.primary-cmd {
+    border-color: #00ffff;
+    color: #00ffff;
+}
+.terminal-action-button.primary-cmd:hover {
+    background-color: #00ffff;
+    color: #1e1e1e;
+}
+
+.terminal-action-button.danger-cmd {
+    border-color: #ff6666;
+    color: #ff6666;
+}
+.terminal-action-button.danger-cmd:hover {
+    background-color: #ff6666;
+    color: #1e1e1e;
+}
+
+/* ------------------------------------------------ */
+/* 8. HISTORY LOG */
+/* ------------------------------------------------ */
+
+.history-panel-cmd {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #000;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.history-item-cmd {
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    padding: 2px 0;
+    border-bottom: 1px dotted #333;
+}
+
+.history-item-cmd:last-child {
+    border-bottom: none;
+}
+
+/* ------------------------------------------------ */
+/* 9. TERMINAL FOOTER */
+/* ------------------------------------------------ */
+
+.terminal-end {
+    margin-top: 20px;
+    padding-bottom: 5px;
+}
+
+.terminal-end .terminal-prompt {
+    color: #fff;
+}

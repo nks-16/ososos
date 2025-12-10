@@ -1,0 +1,246 @@
+/* CheatSheet - Terminal Theme */
+
+.cheatsheet-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.cheatsheet-box {
+  background: linear-gradient(180deg, #04121a, #021017);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  width: 100%;
+  max-width: 900px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.cheatsheet-content {
+  padding: 25px 30px !important;
+  overflow-y: auto;
+  max-height: calc(85vh - 120px);
+}
+
+.cheatsheet-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cheatsheet-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.cheatsheet-content::-webkit-scrollbar-thumb {
+  background: #0ea5a4;
+  border-radius: 4px;
+}
+
+.cheatsheet-content::-webkit-scrollbar-thumb:hover {
+  background: #0c8a89;
+}
+
+.cheatsheet-intro {
+  margin-bottom: 25px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 3px solid #0ea5a4;
+  border-radius: 4px;
+}
+
+.cheatsheet-intro .prompt {
+  color: #7dd3fc;
+  font-weight: 600;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.cheatsheet-intro p {
+  color: #9fb7c3;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.command-category {
+  margin-bottom: 25px;
+}
+
+.category-title {
+  color: #7dd3fc;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 15px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(14, 165, 164, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.command-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 12px;
+}
+
+.command-item {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 14px 16px;
+  transition: all 0.2s;
+}
+
+.command-item:hover {
+  background: rgba(14, 165, 164, 0.05);
+  border-color: rgba(14, 165, 164, 0.3);
+  transform: translateX(2px);
+}
+
+.command-syntax {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.prompt-icon {
+  color: #0ea5a4;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.command-code {
+  background: #000;
+  color: #00ff00;
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(0, 255, 0, 0.2);
+}
+
+.command-desc {
+  color: #9fb7c3;
+  font-size: 13px;
+  line-height: 1.5;
+  padding-left: 22px;
+}
+
+.cheatsheet-tip {
+  margin-top: 25px;
+  padding: 15px;
+  background: rgba(125, 211, 252, 0.05);
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-left: 3px solid #7dd3fc;
+  border-radius: 6px;
+  color: #cfe6ee;
+  font-size: 13px;
+  line-height: 1.6;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.tip-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.cheatsheet-tip strong {
+  color: #7dd3fc;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: #9fb7c3;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: all 0.2s;
+  font-weight: bold;
+}
+
+.close-button:hover {
+  color: #ff5f56;
+  transform: scale(1.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .command-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cheatsheet-content {
+    padding: 20px !important;
+  }
+
+  .command-item {
+    padding: 12px 14px;
+  }
+
+  .command-code {
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cheatsheet-overlay {
+    padding: 10px;
+  }
+
+  .cheatsheet-box {
+    max-height: 95vh;
+  }
+
+  .cheatsheet-content {
+    padding: 15px !important;
+    max-height: calc(95vh - 100px);
+  }
+
+  .category-title {
+    font-size: 14px;
+  }
+
+  .command-desc {
+    font-size: 12px;
+    padding-left: 0;
+  }
+}

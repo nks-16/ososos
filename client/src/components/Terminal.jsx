@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import api from '../api';
-import CheatSheet from './CheatSheet';
+import '../styles/terminal.css';
 
-export default function Terminal({ token }) {
+export default function Terminal({ token, username, onComplete }) {
   const [lines, setLines] = useState([
     'Welcome to OScape v1',
     'Incident ID: FS-CRASH-8842',
@@ -13,13 +13,35 @@ export default function Terminal({ token }) {
   ]);
   const [cmd, setCmd] = useState('');
   const [cwd, setCwd] = useState('/system/root$');
-  const [showCheat, setShowCheat] = useState(false);
+  const [showCheat, setShowCheat] = useState(true);
   const [score, setScore] = useState(null);
   const [history, setHistory] = useState([]); // array of past commands
   const [historyIndex, setHistoryIndex] = useState(null); // null means not navigating
+  const [completed, setCompleted] = useState(false);
   const areaRef = useRef();
 
   useEffect(()=>{ areaRef.current?.scrollTo(0, areaRef.current.scrollHeight); }, [lines]);
+
+  // Fetch initial score from workspace on mount
+  useEffect(() => {
+    const fetchWorkspaceScore = async () => {
+      try {
+        const workspaceId = localStorage.getItem('oscape_workspace');
+        if (workspaceId && token) {
+          const response = await fetch(`http://localhost:4000/api/progress/workspace/${workspaceId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await response.json();
+          if (data.score !== undefined) {
+            setScore(data.score);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch workspace score:', error);
+      }
+    };
+    fetchWorkspaceScore();
+  }, [token]);
 
   async function sendCmd(c) {
     if (typeof c !== 'string') return;
@@ -45,7 +67,17 @@ export default function Terminal({ token }) {
       const out = res.output || '';
       if (out) setLines(l => [...l, out]);
       if (res.newPrompt) setCwd(res.newPrompt);
-      if (typeof res.newScore !== 'undefined' && res.newScore !== null) setScore(res.newScore);
+      if (typeof res.newScore !== 'undefined' && res.newScore !== null) {
+        setScore(res.newScore);
+        // Check if round is completed
+        if (res.completed && !completed) {
+          setCompleted(true);
+          setLines(l => [...l, '', 'Round 1 Complete!', `Final Score: ${res.newScore}`, '']);
+          if (onComplete) {
+            setTimeout(() => onComplete(res.newScore), 2000);
+          }
+        }
+      }
     } catch (err) {
       setLines(l => [...l, `Error: ${err.response?.data?.error || err.message}`]);
     }
@@ -88,36 +120,96 @@ export default function Terminal({ token }) {
     }
   }
 
+  const cheatSheetCommands = [
+    { cat: 'Navigation', cmds: [
+      { cmd: 'ls', desc: 'List directory contents' },
+      { cmd: 'cd <path>', desc: 'Change directory' },
+      { cmd: 'pwd', desc: 'Print working directory' }
+    ]},
+    { cat: 'File Operations', cmds: [
+      { cmd: 'touch <file>', desc: 'Create new file' },
+      { cmd: 'cat <file>', desc: 'Display file contents' },
+      { cmd: 'mkdir <dir>', desc: 'Create directory' },
+      { cmd: 'rm <path>', desc: 'Remove file/directory' }
+    ]},
+    { cat: 'Process', cmds: [
+      { cmd: 'ps', desc: 'List processes' },
+      { cmd: 'kill <pid>', desc: 'Terminate process' }
+    ]},
+    { cat: 'Permissions', cmds: [
+      { cmd: 'chmod <mode> <file>', desc: 'Change permissions' }
+    ]},
+    { cat: 'Execution', cmds: [
+      { cmd: './script.sh', desc: 'Execute script' }
+    ]}
+  ];
+
   return (
-    <div style={{ display:'flex', height:'100vh', fontFamily:'monospace' }}>
-      <div style={{ width:280, background:'#071029', color:'#cbd5e1', padding:12 }}>
-        <div style={{ marginBottom:12 }}>
-          <button onClick={()=>setShowCheat(s=>!s)} style={{ padding:8 }}>{showCheat ? 'Hide' : 'Show'} Cheat-sheet</button>
-        </div>
-        {showCheat ? <CheatSheet onClose={()=>setShowCheat(false)} /> : <div style={{ fontSize:12 }}>Toggle cheat-sheet</div>}
-        <div style={{ marginTop:20 }}>
-          <div style={{ fontSize:12, color:'#9ca3af' }}>Score</div>
-          <div style={{ fontSize:20, color:'#22c55e', marginTop:6 }}>{score === null ? '—' : score}</div>
+    <div className="terminal-page-container">
+      <div className="terminal-main">
+        <div className="terminal-box">
+          <div className="term-header">
+            <div className="term-buttons">
+              <div className="term-dot close"></div>
+              <div className="term-dot min"></div>
+              <div className="term-dot max"></div>
+            </div>
+            <div className="header-center">Round 1: File System Navigation</div>
+            <div className="header-right">
+              <span className="username">{username || 'user'}</span>
+              {completed && <span className="completed-badge">COMPLETED</span>}
+              <span className="score">Score: {score === null ? 0 : score}</span>
+            </div>
+          </div>
+
+          <div ref={areaRef} className="terminal-output">
+            {lines.map((l,i) => <pre key={i} style={{ margin:0 }}>{l}</pre>)}
+          </div>
+
+          <div className="terminal-input-panel">
+            <div className="terminal-prompt">{cwd}</div>
+            <input
+              value={cmd}
+              onChange={e=>setCmd(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Type a command..."
+              className="terminal-input"
+              disabled={completed}
+            />
+            <button 
+              onClick={async ()=>{ await sendCmd(cmd); setCmd(''); }} 
+              className="terminal-enter-btn"
+              disabled={completed}
+            >
+              Enter
+            </button>
+          </div>
         </div>
       </div>
 
-      <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
-        <div ref={areaRef} style={{ background:'#000', color:'#cbd5e1', padding:16, flex:1, overflowY:'auto', fontFamily:'monospace' }}>
-          {lines.map((l,i) => <pre key={i} style={{ margin:0 }}>{l}</pre>)}
+      {showCheat && (
+        <div className="cheatsheet-panel">
+          <div className="cheatsheet-panel-header">
+            <h3>Command Reference</h3>
+          </div>
+          <div className="cheatsheet-panel-content">
+            {cheatSheetCommands.map((section, idx) => (
+              <div key={idx} className="cheat-section">
+                <div className="cheat-category">{section.cat}</div>
+                {section.cmds.map((c, i) => (
+                  <div key={i} className="cheat-item">
+                    <code className="cheat-cmd">$ {c.cmd}</code>
+                    <div className="cheat-desc">{c.desc}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
+            <div className="cheat-tip">
+              <strong>Tip:</strong> Use arrow keys to navigate command history
+            </div>
+          </div>
         </div>
-
-        <div style={{ padding:12, display:'flex', gap:8, alignItems:'center', background:'#071029' }}>
-          <div style={{ fontFamily:'monospace', color:'#cbd5e1' }}>{cwd}</div>
-          <input
-            value={cmd}
-            onChange={e=>setCmd(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder="Type a command..."
-            style={{ flex:1, padding:8, background:'#0b1220', color:'#cbd5e1', border:'1px solid #253045' }}
-          />
-          <button onClick={async ()=>{ await sendCmd(cmd); setCmd(''); }}>Enter</button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

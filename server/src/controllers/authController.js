@@ -23,7 +23,22 @@ async function register(req, res) {
     const user = await User.create({ username, passwordHash: hash, role: role || 'player', workspaceId: ws._id });
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '8h' });
 
-    return res.json({ token, workspaceId: ws._id, username: user.username, role: user.role });
+    return res.json({ 
+      token, 
+      workspaceId: ws._id, 
+      username: user.username, 
+      role: user.role,
+      sessionId: user._id.toString(),
+      progress: {
+        round1Complete: user.round1Complete,
+        round2Complete: user.round2Complete,
+        round3Complete: user.round3Complete,
+        round1Score: user.round1Score,
+        round2Score: user.round2Score,
+        round3Score: user.round3Score,
+        totalScore: user.totalScore
+      }
+    });
   } catch (err) {
     console.error('register error', err);
     return res.status(500).json({ error: 'registration failed' });
@@ -53,7 +68,22 @@ async function login(req, res) {
   }
 
   const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '8h' });
-  return res.json({ token, workspaceId: user.workspaceId, username: user.username, role: user.role });
+  return res.json({ 
+    token, 
+    workspaceId: user.workspaceId, 
+    username: user.username, 
+    role: user.role,
+    sessionId: user._id.toString(),
+    progress: {
+      round1Complete: user.round1Complete,
+      round2Complete: user.round2Complete,
+      round3Complete: user.round3Complete,
+      round1Score: user.round1Score,
+      round2Score: user.round2Score,
+      round3Score: user.round3Score,
+      totalScore: user.totalScore
+    }
+  });
 }
 
 module.exports = { register, login };

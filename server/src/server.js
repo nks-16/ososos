@@ -10,6 +10,9 @@ const { connectDB } = require('./config/db');
 const authRoutes = require('./routes/auth');
 const cmdRoutes = require('./routes/commands');
 const adminRoutes = require('./routes/admin');
+const bankersRoutes = require('./routes/bankers');
+const round3Routes = require('./routes/round3');
+const progressRoutes = require('./routes/progress');
 
 const app = express();
 app.use(helmet());
@@ -27,6 +30,9 @@ app.use('/api/commands', limiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/commands', cmdRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/bankers', bankersRoutes);
+app.use('/api/round3', round3Routes);
+app.use('/api/progress', progressRoutes);
 
 const PORT = process.env.PORT || 4000;
 
